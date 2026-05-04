@@ -99,11 +99,11 @@
 - [x] T8：全篇反向扫描并移除越界项
 - [x] T9：端到端流程走查：ingest → audit → update → survey（基于用户显式提供的 `workspace_root`）
 - [x] T10：固化目录隔离约束（runtime 仅写 `workspace_root`；skill 源码目录固定且不可自修改）
-- [x] T11：移除文档中的硬编码个人路径，统一为通用占位符（`<workspace_root>` / `<pdf_path>`）
+- [x] T11：移除文档中的硬编码个人路径，统一为通用占位符（`<workspace_root>` / `<source_path>` / `<文献根目录>`）
 
 T9 走查记录（文档级）：
 1. `wiki-init(workspace_root="<workspace_root>")`：仅初始化运行时目录，不触碰 skill 源码目录。
-2. `wiki-ingest(workspace_root="<workspace_root>", pdf_path="<pdf_path>")`：先写 pending（draft），再 finalize 迁移为 final_bibkey。
+2. `wiki-ingest(workspace_root="<workspace_root>", source_path="<source_path>")` 或 `wiki-ingest(workspace_root="<workspace_root>", source_dir="<文献根目录>")`：先写 pending（draft），再 finalize 迁移为 final_bibkey。
 3. `wiki-audit(workspace_root="<workspace_root>", paper_page="wiki/papers/<bibkey>.md")`：仅 pass 才允许 stable。
 4. `wiki-update-page(workspace_root="<workspace_root>", target_page="wiki/papers/<bibkey>.md", changes=...)`：diff-before-write；实体变更触发 stable→draft。
 5. `wiki-survey(workspace_root="<workspace_root>", topic="<topic>")`：仅消费 stable papers，导出 `outputs/survey/<slug>.tex`。

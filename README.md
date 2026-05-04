@@ -7,7 +7,7 @@
 | 来源 | 吸收什么 | 不吸收什么 |
 |---|---|---|
 | **Astro-Han**（基底） | 单 `SKILL.md` + `raw/` + `wiki/<topic>/` + `index/log` 三件套 | — |
-| **kfchou** | `wiki-audit` 双 phase 核心；`wiki-update` 的 diff-before-write | severity-tier 报告（过度设计） |
+| **kfchou** | `wiki-audit` 双 phase 核心；`wiki-update-page` 的 diff-before-write | severity-tier 报告（过度设计） |
 | **OmegaWiki** | PDF 摄入回退链（tex > pdf > vision）；`citations.jsonl` 思路；survey skill 思路 | 9 类页面、claim/experiment 建模、双向边图、DeepXiv 依赖、exp-* 全套 |
 [skyllwt/OmegaWiki](https://github.com/skyllwt/OmegaWiki)
 [kfchou/wiki-skills](https://github.com/kfchou/wiki-skills)
