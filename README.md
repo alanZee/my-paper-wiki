@@ -9,6 +9,9 @@
 | **Astro-Han**（基底） | 单 `SKILL.md` + `raw/` + `wiki/<topic>/` + `index/log` 三件套 | — |
 | **kfchou** | `wiki-audit` 双 phase 核心；`wiki-update` 的 diff-before-write | severity-tier 报告（过度设计） |
 | **OmegaWiki** | PDF 摄入回退链（tex > pdf > vision）；`citations.jsonl` 思路；survey skill 思路 | 9 类页面、claim/experiment 建模、双向边图、DeepXiv 依赖、exp-* 全套 |
+[skyllwt/OmegaWiki](https://github.com/skyllwt/OmegaWiki)
+[kfchou/wiki-skills](https://github.com/kfchou/wiki-skills)
+[Astro-Han/karpathy-llm-wiki](https://github.com/Astro-Han/karpathy-llm-wiki)
 
 ---
 
@@ -51,24 +54,16 @@ my-paper-wiki 是一个跨 Claude Code / Cursor / Codex / OpenCode 的 Agent Ski
 3. 审计前置：paper 页不通过审计不得进入 stable。
 4. 可追溯优先：每条关键结论应能回溯到来源论文与 bibkey。
 5. 兼容优先：使用标准 markdown 相对链接，减少平台绑定。
+6. 目录隔离：运行时写入仅允许发生在用户指定 `workspace_root`，skill 源码目录视为固定资产且不可被 skill 自修改。
 
 ## 4. 信息架构（Hybrid）
+
+本仓库是 **skill 源码目录**，仅维护规范与模板资产：
 
 ```text
 my-paper-wiki/
 ├── SKILL.md
 ├── README.md
-├── refs.bib
-├── raw/
-│   └── papers/
-├── wiki/
-│   ├── index.md
-│   ├── log.md
-│   ├── papers/
-│   ├── topics/
-│   └── surveys/
-├── outputs/
-│   └── survey/
 ├── references/
 │   ├── raw-template.md
 │   ├── paper-template.md
@@ -79,7 +74,26 @@ my-paper-wiki/
     └── glossary.md
 ```
 
-目录职责：
+运行时知识库由 skill 在 `workspace_root` 外部目录创建：
+
+```text
+<workspace_root>/
+├── refs.bib
+├── raw/
+│   └── papers/
+├── wiki/
+│   ├── index.md
+│   ├── log.md
+│   ├── papers/
+│   │   └── _pending/
+│   ├── topics/
+│   └── surveys/
+└── outputs/
+    ├── citations.jsonl
+    └── survey/
+```
+
+运行时目录职责：
 
 - raw/papers/: 原始 PDF 与提取文本副产物
 - wiki/papers/: 论文原子页（唯一强约束实体）
@@ -87,6 +101,7 @@ my-paper-wiki/
 - wiki/surveys/: 综述草稿页
 - outputs/survey/: 导出 LaTeX 文本
 - refs.bib: ingest 自动维护的 BibTeX 派生产物
+- outputs/citations.jsonl: 引用追踪日志
 
 ## 5. 页面 Schema
 
