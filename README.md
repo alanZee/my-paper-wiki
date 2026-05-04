@@ -55,6 +55,10 @@ my-paper-wiki 是一个跨 Claude Code / Cursor / Codex / OpenCode 的 Agent Ski
 4. 可追溯优先：每条关键结论应能回溯到来源论文与 bibkey。
 5. 兼容优先：使用标准 markdown 相对链接，减少平台绑定。
 6. 目录隔离：运行时写入仅允许发生在用户指定 `workspace_root`，skill 源码目录视为固定资产且不可被 skill 自修改。
+7. 全自动优先：skill 被调用后默认自动完成指定文献根目录下的批量构建流程（init→ingest→finalize→audit→survey），不把已在规范中确定的中间细节反复抛回用户。
+8. 一次性权限：流程启动时一次性申请本轮所需权限，执行过程中不重复请求同类权限；仅在越界或高风险操作时中断确认。
+9. 非阻塞执行：单篇失败不阻塞整批，按统一重试与错误分级处理并在最终汇总失败清单。
+10. 自动化不越界：即使全自动执行，也必须严格遵守状态机门禁、目录隔离与引用可追溯约束。
 
 ## 4. 信息架构（Hybrid）
 
@@ -431,3 +435,12 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 - 流程闭环：ingest、audit、update、survey 可串联
 - 学术约束：stable 门禁、引用可追踪、审计可复核
 - 交付正确：核心交付物是单 `SKILL.md`，不是 Python 项目
+
+## 15. 开源协议与来源引用
+
+- 本项目采用 [MIT License](./LICENSE)。
+- 本项目融合参考了以下仓库（详见本文第 0 节融合边界）：
+  - [Astro-Han/karpathy-llm-wiki](https://github.com/Astro-Han/karpathy-llm-wiki)（MIT）
+  - [kfchou/wiki-skills](https://github.com/kfchou/wiki-skills)（MIT）
+  - [skyllwt/OmegaWiki](https://github.com/skyllwt/OmegaWiki)（MIT）
+- 对上述来源仓库仅按本项目 v0.1 范围吸收指定思路，未整体并入其完整功能集。

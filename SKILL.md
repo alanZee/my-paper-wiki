@@ -26,7 +26,7 @@ description: Use when building or maintaining a personal paper-centric wiki with
 以下目录是 **运行时目录**，不是本 skill 仓库目录：
 
 ```text
-<workspace>/
+<workspace_root>/
 ├── refs.bib
 ├── raw/
 │   └── papers/
@@ -138,6 +138,11 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 
 触发：首次使用、workspace 缺失，或用户显式要求初始化。
 
+常见触发表达：
+- “初始化论文 wiki”
+- “创建 my-paper-wiki 目录骨架”
+- “先把 workspace 搭好”
+
 输入：
 - 必填：`workspace_root`（运行时目录）
 
@@ -158,6 +163,15 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 ## 4.2 wiki-ingest
 
 触发：用户提供单个文献源文件（`.pdf` / `.tex`），或要求从 `<文献根目录>` 递归摄入文献源文件。
+
+常见触发表达：
+- “ingest 这篇 paper”
+- “把这个 PDF 加入 wiki”
+- “递归导入 `<文献根目录>` 下文献”
+
+最小调用示例：
+- 单文件：`wiki-ingest(workspace_root="<workspace_root>", source_path="<source_path>")`
+- 目录模式：`wiki-ingest(workspace_root="<workspace_root>", source_dir="<文献根目录>")`
 
 输入：
 - `workspace_root`
@@ -191,6 +205,12 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 4. 执行 `provisional_key -> final_bibkey` 迁移
 5. 记录 finalize 事件（含 trace_id）
 
+查证与仲裁规则：
+- 来源优先级：出版方/期刊官网 > DOI 官方落地页 > arXiv 页面 > Crossref/OpenAlex/Semantic Scholar（交叉核验）
+- 高优先级与低优先级冲突时：高优先级覆盖
+- 同优先级来源冲突时：标记 `metadata_conflict` 并进入人工确认
+- 仲裁证据必须写入 `wiki/log.md`（来源 URL、冲突字段、裁决结果）
+
 迁移必须一次完成：
 - 重命名 pending 页到 `wiki/papers/<final_bibkey>.md`
 - 更新 refs/index/log
@@ -209,6 +229,15 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 ## 4.3 wiki-query
 
 触发：用户提出 wiki 问题，或要求基于现有页面生成主题草稿。
+
+常见触发表达：
+- “我现在对 X 方向都知道什么？”
+- “基于现有 stable 论文回答这个问题”
+- “把这个问答保存为 topic/survey 草稿”
+
+最小调用示例：
+- 只读问答：`wiki-query(workspace_root="<workspace_root>", question="<question>", save=false)`
+- 回写草稿：`wiki-query(workspace_root="<workspace_root>", question="<question>", save=true)`
 
 输入：
 - `workspace_root`
@@ -239,6 +268,14 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 ## 4.4 wiki-audit
 
 触发：ingest 后的高价值论文审计，或 stable 晋级前审计。
+
+常见触发表达：
+- “审计这篇 paper 页是否可升 stable”
+- “检查 claim 有没有引用支撑”
+- “跑一遍 Phase A/Phase B”
+
+最小调用示例：
+- `wiki-audit(workspace_root="<workspace_root>", paper_page="wiki/papers/<bibkey>.md")`
 
 输入：
 - `workspace_root`
@@ -278,6 +315,14 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 
 触发：周期性健康检查，或 ingest/audit/update 后一致性校验。
 
+常见触发表达：
+- “跑一次 wiki 一致性检查”
+- “检查断链和孤立页”
+- “看 refs.bib 与引用是否一致”
+
+最小调用示例：
+- `wiki-lint(workspace_root="<workspace_root>")`
+
 输入：
 - `workspace_root`
 
@@ -308,6 +353,14 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 ## 4.6 wiki-survey
 
 触发：用户要求生成某主题综述草稿或 Related Work 草稿。
+
+常见触发表达：
+- “基于 stable papers 生成某主题综述”
+- “导出一版 Related Work LaTeX”
+- “按方法脉络整理该主题研究”
+
+最小调用示例：
+- `wiki-survey(workspace_root="<workspace_root>", topic="<topic>")`
 
 输入：
 - `workspace_root`
@@ -342,6 +395,14 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 
 触发：用户要求修订既有页面，或根据新证据修正既有结论。
 
+常见触发表达：
+- “更新这篇 paper 页里的某段结论”
+- “根据新证据修订已有内容”
+- “先看 diff 再决定是否写入”
+
+最小调用示例：
+- `wiki-update-page(workspace_root="<workspace_root>", target_page="<target_page>", changes="<changes>")`
+
 输入：
 - `workspace_root`
 - `target_page`
@@ -367,9 +428,51 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 
 ---
 
+## 4.8 统一失败分级输出模板（执行时格式约束）
+
+为降低执行歧义，7 个 skills 在失败/异常时统一使用三级输出：
+
+- `error`：硬失败，当前步骤立即停止
+- `warn`：可继续但必须显式告警，不得默默降级
+- `info`：状态说明，不构成失败
+
+统一输出结构（终端或日志均适用）：
+- `level`: `error|warn|info`
+- `skill`: `wiki-init|wiki-ingest|wiki-query|wiki-audit|wiki-lint|wiki-survey|wiki-update-page`
+- `code`: 稳定错误码（如 `MPW-INGEST-NO-SOURCE`）
+- `message`: 面向用户的简明说明
+- `action`: 下一步建议（可执行）
+- `trace_id`: 关键流程必须带 trace_id
+
+推荐错误码前缀：
+- `MPW-INIT-*`
+- `MPW-INGEST-*`
+- `MPW-QUERY-*`
+- `MPW-AUDIT-*`
+- `MPW-LINT-*`
+- `MPW-SURVEY-*`
+- `MPW-UPDATE-*`
+
+示例（error）：
+```json
+{"level":"error","skill":"wiki-ingest","code":"MPW-INGEST-NO-SOURCE","message":"source_path 不存在或不可读","action":"检查 source_path 或改用 source_dir","trace_id":"trace-20260504-abcdef12"}
+```
+
+示例（warn）：
+```json
+{"level":"warn","skill":"wiki-query","code":"MPW-QUERY-WEAK-EVIDENCE","message":"stable 证据不足，结论存在不确定性","action":"先补 ingest/audit 后再生成确定性结论","trace_id":"trace-20260504-bcdefa34"}
+```
+
+示例（info）：
+```json
+{"level":"info","skill":"wiki-lint","code":"MPW-LINT-PASS","message":"lint 检查通过","action":"可继续后续流程","trace_id":"trace-20260504-cdefab56"}
+```
+
+---
+
 ## 5) 引用追踪（citations.jsonl）
 
-文件：`<workspace>/outputs/citations.jsonl`
+文件：`<workspace_root>/outputs/citations.jsonl`
 
 最小字段：
 - `timestamp`
@@ -401,8 +504,34 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 
 ---
 
-## 7) 执行原则
+## 7) 失败重试与并发一致性（运行时约束）
+
+重试与回退参数：
+- `max_retries = 3`
+- `backoff = 2^n`
+- `per_source_timeout = 8s`
+
+并发一致性约束（共享文件）：
+- 共享目标：`refs.bib`、`wiki/index.md`、`wiki/log.md`
+- 写入流程：获取写锁 -> 写临时文件 -> 原子替换目标文件 -> 释放锁
+
+幂等与恢复：
+- 幂等键：`pdf_hash`
+- 中断后允许按 `pdf_hash` 重入
+- 重入不得重复追加 refs/index/log
+- 关键事件需写入 `trace_id` 到 `wiki/log.md`
+
+---
+
+## 8) 执行原则
 
 1. README 是验收基线；上游仓库仅作基底与能力来源，不作为最终边界定义。
 2. 先保证流程闭环，再补细节，不引入范围外重特性。
 3. 所有运行时写入都发生在 `workspace_root`，不得写回 skill 源码目录。
+4. 全自动执行：skill 一旦被调用，应默认在用户给定 `workspace_root` 与文献根目录范围内自动完成 `init -> ingest -> finalize -> audit -> survey` 全流程，不在中途反复向用户询问已被规范确定的细节参数。
+5. 一次性权限策略：在流程启动阶段一次性申请本轮所需权限（读文献目录、写运行时目录、必要联网查证）；执行中不重复弹出同类权限请求，除非出现越界写入、破坏性操作或用户显式追加新范围。
+6. 非阻塞式沟通：执行过程中只输出阶段进度与最终结果摘要；仅在触发硬失败（error）且无法依据既定规则自动恢复时才中断并请求用户决策。
+7. 默认无交互细节模式：凡已在本 SKILL 约束、模板、错误分级中可判定的分支，必须由 skill 自主决策并落盘留痕，不将中间实现细节回抛给用户。
+8. 失败可恢复优先：遇到临时失败按 `max_retries` 与回退策略自动重试；超过阈值后写入结构化错误并继续处理其余文献，最终统一输出失败清单。
+9. 大批量导入的完成标准：以“文献根目录内可处理文件全部完成 ingest_raw，且可推进者进入 finalize/audit”为批次完成条件，不因单篇异常阻塞整批构建。
+10. 权限安全边界不放宽：即便全自动模式启用，也不得突破目录隔离、状态机门禁和引用可追溯约束。

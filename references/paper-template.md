@@ -4,7 +4,7 @@ title: ""
 bibkey: ""
 year: 2026
 status: draft
-source_pdf: "../../raw/papers/<file>.pdf"
+source_file: "../../raw/papers/<file>.<ext>"
 source_text: "../../raw/papers/<file>.md"
 updated: 2026-05-04
 tags: []
