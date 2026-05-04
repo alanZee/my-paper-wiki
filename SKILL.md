@@ -47,7 +47,7 @@ description: Use when building or maintaining a personal paper-centric wiki with
 ### 1.1 最小调用示例（避免目录角色混淆）
 
 - `wiki-init(workspace_root="<workspace_root>")`
-- `wiki-ingest(workspace_root="<workspace_root>", pdf_path="<pdf_path>")`
+- `wiki-ingest(workspace_root="<workspace_root>", source_path="<source_path>")`
 - `wiki-query(workspace_root="<workspace_root>", question="...", save=false)`
 
 约束：`workspace_root` 必须是用户显式指定的外部目录，不得指向本 skill 源码目录。
@@ -157,14 +157,14 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 
 ## 4.2 wiki-ingest
 
-触发：用户提供 PDF 路径并要求摄入。
+触发：用户提供单个文献源文件（`.pdf` / `.tex`），或要求从 `<文献根目录>` 递归摄入文献源文件。
 
 输入：
 - `workspace_root`
-- `pdf_path`
+- 二选一：`source_path`（单文件，支持 `.pdf` / `.tex`）或 `source_dir`（目录模式，使用 `<文献根目录>`）
 
 读取：
-- `pdf_path`
+- `source_path` 或 `source_dir/**/*.{pdf,tex}`
 - 已有 `wiki/papers/` 与 `wiki/papers/_pending/`（用于幂等判断）
 
 写入：
@@ -177,8 +177,8 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 流程分两段：`ingest_raw + ingest_finalize`
 
 ### A) ingest_raw（快速落盘）
-1. 复制/登记 PDF 到 `raw/papers/`
-2. 计算 `pdf_hash`（幂等键）
+1. 复制/登记文献源文件到 `raw/papers/`
+2. 计算内容哈希（幂等键字段名保留为 `pdf_hash`）
 3. 文本提取回退链：`tex > pdf > vision`
 4. 生成 provisional_key
 5. 创建/更新 pending 页（draft）
@@ -197,7 +197,8 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 - 修复内部旧路径引用（如存在）
 
 失败路径：
-- `pdf_path` 不存在或不可读：立即失败，不写入半成品
+- `source_path` 不存在、不可读或扩展名不在 `.pdf` / `.tex`：立即失败，不写入半成品
+- 目录模式下 `source_dir` 不存在、不可读或递归后无 `.pdf` / `.tex`：立即失败，不写入半成品
 - metadata 未查证：禁止生成 final_bibkey，保留 pending（draft）
 - metadata 冲突且无法自动仲裁：写入冲突日志并进入人工确认
 - 同一 `pdf_hash` 重复 ingest：幂等处理，不重复追加 refs/index/log

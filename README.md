@@ -189,13 +189,13 @@ target_output: "../../outputs/survey/<slug>.tex"
 
 ### 7.2 provisional_key 规则
 
-`provisional_key` 统一形态：`pending-YYYYMMDD-<pdfhash8>`
+`provisional_key` 统一形态：`pending-YYYYMMDD-<contenthash8>`
 
 - `YYYYMMDD`：摄入日期（本地时区）
-- `pdfhash8`：PDF 内容哈希前 8 位（小写十六进制）
-- 幂等键：`pdf_hash`
+- `contenthash8`：文献源文件内容哈希前 8 位（小写十六进制）
+- 幂等键字段：`pdf_hash`（v0.1 字段名保留）
 
-同一 `pdf_hash` 的重复 ingest 必须幂等：
+同一内容哈希（字段 `pdf_hash`）的重复 ingest 必须幂等：
 
 - 不重复创建 pending 页面；
 - 不重复追加 refs/index/log；
@@ -255,14 +255,14 @@ target_output: "../../outputs/survey/<slug>.tex"
 
 ### 8.2 wiki-ingest
 
-输入：PDF 路径。
+输入：文献源路径（支持 `.pdf` / `.tex`；可传单文件或 `<文献根目录>` 递归扫描）。
 
 采用双阶段流水线：`ingest_raw` + `ingest_finalize`。
 
 阶段 A：ingest_raw（快速摄入，不阻塞落盘）
 
-1. 复制/登记 PDF 至 raw/papers/
-2. 计算 `pdf_hash`（幂等键）
+1. 复制/登记文献源文件至 raw/papers/
+2. 计算内容哈希（幂等键，字段名保持 `pdf_hash`）
 3. 提取文本（优先 tex，其次 pdf，最后 vision 回退）
 4. 生成 `provisional_key = pending-YYYYMMDD-<pdfhash8>`
 5. 生成/更新 `wiki/papers/_pending/<provisional_key>.md`（draft）
