@@ -114,7 +114,7 @@ title: "<paper title>"
 bibkey: "<authorYearKeyword>"
 year: 2024
 status: draft   # draft | stable
-source_pdf: "../../raw/papers/<file>.pdf"
+source_file: "../../raw/papers/<file>.<ext>"
 source_text: "../../raw/papers/<file>.md"
 updated: 2026-05-03
 tags: [fluid, control]
@@ -264,7 +264,7 @@ target_output: "../../outputs/survey/<slug>.tex"
 1. 复制/登记文献源文件至 raw/papers/
 2. 计算内容哈希（幂等键，字段名保持 `pdf_hash`）
 3. 提取文本（优先 tex，其次 pdf，最后 vision 回退）
-4. 生成 `provisional_key = pending-YYYYMMDD-<pdfhash8>`
+4. 生成 `provisional_key = pending-YYYYMMDD-<contenthash8>`
 5. 生成/更新 `wiki/papers/_pending/<provisional_key>.md`（draft）
 6. 更新 `index.md` 与 `log.md`
 

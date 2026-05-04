@@ -66,7 +66,7 @@ title: "<paper title>"
 bibkey: "<authorYearKeyword>"
 year: 2024
 status: draft
-source_pdf: "../../raw/papers/<file>.pdf"
+source_file: "../../raw/papers/<file>.<ext>"
 source_text: "../../raw/papers/<file>.md"
 updated: 2026-05-04
 tags: []
@@ -180,7 +180,7 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 1. 复制/登记文献源文件到 `raw/papers/`
 2. 计算内容哈希（幂等键字段名保留为 `pdf_hash`）
 3. 文本提取回退链：`tex > pdf > vision`
-4. 生成 provisional_key
+4. 生成 provisional_key：`pending-YYYYMMDD-<contenthash8>`
 5. 创建/更新 pending 页（draft）
 6. 更新 `wiki/index.md`、`wiki/log.md`
 
@@ -255,7 +255,7 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 输出：
 - `pass` 或 `fail`
 - 修复项清单
-- 审计报告（建议落在 `outputs/` 下并在 index/log 留痕）
+- 审计报告（必须落在 `outputs/` 下并在 index/log 留痕）
 
 写入：
 - 追加 `wiki/log.md`
@@ -394,8 +394,10 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 - `provisional_key`
 - `candidate_final_bibkey`
 - `conflict_fields`
-- `source_urls`
+- `source_refs`
 - `decision`
+
+说明：`source_refs` 允许同时记录 URL 与本地来源路径（含 `<文献根目录>` 下相对路径）。
 
 ---
 
