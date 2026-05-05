@@ -11,15 +11,17 @@ description: Use when building or maintaining a personal paper-centric wiki with
 
 用户只需描述需求，skill 自动识别并执行对应流程：
 
-| 用户意图 | 触发词 / 场景 | 自动执行 |
-|----------|-------------|---------|
-| **初始化文献库** | 给出文献目录 + 空/新 workspace | init → ingest(全量) → finalize → audit → survey |
-| **添加新文献** | 给出单个/多个文件路径到已有 workspace | ingest → finalize → audit → survey |
-| **查询知识** | `/query` 或自然语言提问 | query |
-| **生成综述** | `/survey` 或要求综述/Related Work | survey |
-| **修订页面** | `/update` 或要求修改已有页面 | update-page |
-| **一致性检查** | `/lint` 或要求健康检查 | lint |
-| **全文流水线** | 明确要求"完整跑一遍"或"端到端测试" | init → ingest → finalize → audit → survey + 验证 |
+| 用户意图 | 触发词 / 场景 | 斜杠命令 | 自动执行 |
+|----------|-------------|---------|---------|
+| **初始化文献库** | 给出文献目录 + 空/新 workspace | `/wiki-init` | init → ingest(全量) → finalize → audit → survey |
+| **添加新文献** | 给出单个/多个文件路径到已有 workspace | `/wiki-ingest` | ingest → finalize → audit → survey |
+| **查询知识** | 自然语言提问 | `/wiki-query` | query |
+| **生成综述** | 要求综述/Related Work | `/wiki-survey` | survey |
+| **修订页面** | 要求修改已有页面 | `/wiki-update-page` | update-page |
+| **一致性检查** | 要求健康检查 | `/wiki-lint` | lint |
+| **全文流水线** | 明确要求"完整跑一遍" | — | init → ingest → finalize → audit → survey + 验证 |
+
+斜杠命令详见 `references/skills/` 目录下的各子 skill 文件。
 
 路由规则：
 - 若 `workspace_root` 不存在或缺少 `wiki/index.md` → 自动先执行 init
