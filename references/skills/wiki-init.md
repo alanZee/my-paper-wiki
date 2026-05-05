@@ -1,6 +1,7 @@
 ---
 name: wiki-init
-description: 初始化 my-paper-wiki 运行时 workspace 目录骨架。
+type: technique
+description: Use when workspace_root is missing, lacks wiki/index.md, or user explicitly requests wiki initialization.
 ---
 # wiki-init
 

@@ -1,6 +1,7 @@
 ---
 name: wiki-update-page
-description: 修订既有 wiki 页面，diff-before-write，修改 paper 内容后需重审。
+type: technique
+description: Use when user requests revision of an existing wiki page, correction of conclusions based on new evidence, or content update with diff review.
 ---
 # wiki-update-page
 

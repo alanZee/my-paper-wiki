@@ -1,6 +1,7 @@
 ---
 name: wiki-audit
-description: 审计论文页面，检查引用支撑性，决定是否可晋级 stable。
+type: technique
+description: Use when a paper page needs citation-support verification before promotion from draft to stable, or after ingest completion.
 ---
 # wiki-audit
 

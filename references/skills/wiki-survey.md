@@ -1,6 +1,7 @@
 ---
 name: wiki-survey
-description: 基于 stable 论文生成主题综述草稿与 LaTeX 导出。
+type: technique
+description: Use when user requests a literature survey, Related Work section, or topic synthesis from stable papers, with optional LaTeX export.
 ---
 # wiki-survey
 

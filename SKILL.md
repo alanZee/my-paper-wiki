@@ -61,6 +61,7 @@ description: Use when building or maintaining a personal paper-centric wiki with
 │   └── surveys/
 ├── outputs/
 │   ├── citations.jsonl
+│   ├── audit/
 │   └── survey/
 ```
 

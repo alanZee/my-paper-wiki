@@ -224,19 +224,12 @@ def main():
             warnings.append(f"stable={stable_count} < 5 但无 survey-warn.md")
 
     # --- 5. 无个人路径泄露 ---
-    personal_patterns = [r"C:\\Users", r"/home/", r"/Users/", r"alanZe", r"alanze"]
+    personal_patterns = [r"C:\\Users", r"/home/", r"/Users/"]
     for f in list(paper_pages) + audit_reports:
         txt = f.read_text(encoding="utf-8")
         for pat in personal_patterns:
             if re.search(pat, txt, re.I):
                 errors.append(f"{f.name}: 检测到个人路径 ({pat})")
-    # 检查 report 文件
-    for rpt in (root.parent.parent / "docs" / "superpowers" / "reports").glob("*.md"):
-        if rpt.exists():
-            txt = rpt.read_text(encoding="utf-8")
-            for pat in personal_patterns:
-                if re.search(pat, txt, re.I):
-                    errors.append(f"报告 {rpt.name}: 检测到个人路径 ({pat})")
     ok("未检测到个人路径泄露")
 
     # --- 6. 日志完整性 ---

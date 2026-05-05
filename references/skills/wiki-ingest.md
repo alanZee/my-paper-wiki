@@ -1,6 +1,7 @@
 ---
 name: wiki-ingest
-description: 摄入论文源文件（PDF/Tex），提取元数据并生成论文页面。
+type: technique
+description: Use when user provides PDF/Tex files to add to the wiki, or requests batch import from a literature directory.
 ---
 # wiki-ingest
 

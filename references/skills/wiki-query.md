@@ -1,6 +1,7 @@
 ---
 name: wiki-query
-description: 基于已有 wiki 内容回答问题，可选保存为 topic/survey 草稿。
+type: technique
+description: Use when user asks a research question answerable from existing wiki pages, or wants to save a Q&A as topic/survey draft.
 ---
 # wiki-query
 

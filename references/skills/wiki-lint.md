@@ -1,6 +1,7 @@
 ---
 name: wiki-lint
-description: 一致性健康检查：断链、孤立页、refs.bib 引用匹配。
+type: technique
+description: Use when performing a wiki health check, after bulk ingest/audit cycles, or when consistency issues are suspected.
 ---
 # wiki-lint
 
