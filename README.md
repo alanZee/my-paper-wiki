@@ -38,15 +38,17 @@ skill 自动识别意图并执行对应流程：
 
 ### 斜杠命令
 
-| 命令 | 说明 |
-|------|------|
-| `/wiki-init` | 初始化 workspace |
-| `/wiki-ingest` | 摄入论文 |
-| `/wiki-query` | 查询知识 |
-| `/wiki-audit` | 审计论文页面 |
-| `/wiki-lint` | 一致性检查 |
-| `/wiki-survey` | 生成综述 |
-| `/wiki-update-page` | 修订页面 |
+单一入口 `/my-paper-wiki`，根据用户意图自动路由到对应子流程：
+
+```
+/my-paper-wiki 初始化论文 wiki                          → init
+/my-paper-wiki ingest path/to/paper.pdf                 → ingest
+/my-paper-wiki 我对流动控制方向都知道什么？                → query
+/my-paper-wiki 生成机器学习综述                          → survey
+/my-paper-wiki lint                                     → lint
+```
+
+7 个子流程：init、ingest、finalize、audit、query、survey、update-page
 
 ### 参数
 
@@ -84,7 +86,7 @@ skill 自动识别意图并执行对应流程：
 
 ```
 my-paper-wiki/
-├── SKILL.md                    ← 主规范（agent 读取）
+├── SKILL.md                    ← 主规范（自动路由 7 个子流程）
 ├── README.md                   ← 本文件
 ├── references/
 │   ├── paper-template.md       ← 论文页面模板
@@ -94,7 +96,7 @@ my-paper-wiki/
 │   ├── subagent-examples.md    ← 子代理创建示例
 │   ├── error-format.md         ← 错误分级规范
 │   ├── data-contracts.md       ← 数据契约与运行时约束
-│   └── skills/                 ← 7 个子 skill（斜杠命令）
+│   └── skills/                 ← 子流程详细规范（agent 按需加载）
 │       ├── wiki-init.md
 │       ├── wiki-ingest.md
 │       ├── wiki-query.md
@@ -102,9 +104,13 @@ my-paper-wiki/
 │       ├── wiki-lint.md
 │       ├── wiki-survey.md
 │       └── wiki-update-page.md
+├── scripts/
+│   └── pipeline-verify.py      ← E2E 验证脚本
 └── docs/
     └── design-manual.md        ← 设计手册
 ```
+
+**部署**：将整个目录复制到 `.claude/skills/my-paper-wiki/`（或 `~/.agents/skills/my-paper-wiki/`），即可通过 `/my-paper-wiki` 调用。
 
 ## 开源协议与来源引用
 
