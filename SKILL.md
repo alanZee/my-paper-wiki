@@ -233,12 +233,42 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 - 提取困难或可信度低时（如 PDF 为扫描件、作者名截断、无 DOI），进入联网查证
 
 **第二步：联网查证（按需、搜到即停）**
-- 联网查证由**子代理**执行，主代理在启动时一次性授予子代理 WebSearch 与 WebFetch（含学术平台）权限
+- 联网查证由**子代理**执行，使用高性价比模型（如 Haiku），主代理一次性授予搜索权限
 - 可用平台：Google Scholar、arXiv、Connected Papers、Crossref、OpenAlex、Semantic Scholar
 - 搜索策略：按标题或 DOI/arXiv ID 直接搜索，从搜索结果页提取元数据；必要时访问论文详情页核验
 - **搜到一条可信结果即停止**，不遍历全部源
 - 仅当结果可疑（作者缺失、标题截断、年份明显错误）时，才换关键词或换平台继续查
 - 所有字段均不允许 Unknown/空值：title、authors、year、venue 必须有实际值
+
+**子代理创建示例（跨平台）**
+
+Claude Code：
+```
+Agent(
+    description="查证论文元数据",
+    model="haiku",
+    prompt="请用 WebSearch 和 WebFetch 查找以下论文的完整元数据（title, authors, year, venue, DOI）：\n标题：<title_guess>\narXiv ID：<arxiv_id>\nDOI：<doi>\n\n要求：搜到一条可信结果即返回，不要遍历全部源。返回 JSON 格式。",
+)
+```
+
+OpenCode / Codex CLI：
+```
+task(
+    model="haiku",
+    prompt="请用 WebSearch 和 WebFetch 查找以下论文的完整元数据...",
+)
+```
+
+Gemini CLI：
+```
+# 通过 Gemini 的 agents/skills 机制创建子代理
+```
+
+通用原则：
+- 子代理使用最小模型（Haiku 级别），节省 token 开销
+- 主代理在创建子代理时一次性传递搜索权限，子代理无需重复申请
+- 子代理返回结构化结果（JSON），主代理直接使用
+- 每篇论文一个子代理调用，批量时可并行
 
 **冲突仲裁**
 - 高优先级与低优先级冲突时：高优先级覆盖
