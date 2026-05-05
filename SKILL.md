@@ -79,111 +79,35 @@ description: Use when building or maintaining a personal paper-centric wiki with
 
 ### 2.1 paper: `wiki/papers/<bibkey>.md`
 
-```yaml
----
-type: paper
-title: "<paper title>"
-bibkey: "<authorYearKeyword>"
-authors: ["<Author1 Full Name>", "<Author2 Full Name>"]
-year: 2024
-venue: "<journal/conference name>"
-venue_type: journal|conference|preprint
-doi: "<10.xxxx/...>"
-arxiv_id: "<2401.xxxxx>"
-methodology_type: <experimental|theoretical|numerical|review|mixed>
-status: draft
-source_file: "../../raw/papers/<file>.<ext>"
-source_text: "../../raw/papers/<file>.md"
-updated: 2026-05-04
-tags: [<domain>, <method>, <topic>]
----
-```
+模板详见 `references/paper-template.md`。
 
-> **提取质量准则**：每个区块必须包含论文特有的具体信息（方法名、参数值、数值结果、物理设定），禁止使用适用于任何论文的笼统描述。
+**Frontmatter 必填字段**：
 
-#### Abstract
-> 一段话概括核心贡献、方法与关键结论。（可引用原文 abstract 或用自己的话精炼）
+| 字段 | 说明 |
+|------|------|
+| `type` | 固定 `paper` |
+| `title` | 论文标题 |
+| `bibkey` | 主键（pending 阶段为 provisional_key） |
+| `authors` | 作者列表 |
+| `year` | 发表年份 |
+| `venue` | 期刊/会议名 |
+| `venue_type` | `journal` / `conference` / `preprint` |
+| `doi` | DOI（如有） |
+| `arxiv_id` | arXiv ID（如有） |
+| `methodology_type` | `experimental` / `theoretical` / `computational` / `review` / `mixed` |
+| `status` | `draft` / `stable` |
+| `source_file` / `source_text` | 相对路径到原始文件 |
+| `tags` | 按 `[领域, 方法, 专题]` 三层提取 |
 
-#### Research Questions & Hypotheses
-- 论文试图回答的核心问题
-- 可检验的假设或预期（如有）
+**正文区块**（详见模板）：Abstract → Research Questions → Problem Formulation → Approach → Results → Claims & Contributions → Assumptions & Limits → Repro Notes → Key Excerpts → Citations → Related Work Links
 
-#### Problem Formulation
-- **具体问题定义**：明确的物理/数学问题描述
-- **物理场与几何**：流场类型、几何构型、边界条件
-- **控制方程**：核心方程（如 NS 方程、Boltzmann 方程等）及关键无量纲数（Re、Ma 等）
-- **控制目标**：最小化/最大化什么量
-
-#### Approach
-- **核心方法**：具体算法/框架名称（如 DDPG、SAC、adjoint method、PINN 等）
-- **方法细节**：
-  - 架构设计（网络结构、层数、节点数等）
-  - 关键方程（损失函数、目标函数、奖励函数）
-  - 训练/求解策略（超参数、优化器、训练步数）
-  - 状态空间、动作空间设计（控制类论文）
-- **与现有方法的区别**：该方法相对已有方法的改进点
-- **关键创新**：论文声称的核心创新
-
-#### Results
-- **实验设置**：具体案例参数（Re 数、网格分辨率、时间步长等）
-- **基准对比**：与哪些 baseline / 以往方法比较
-- **关键量化结果**：具体数值（如 drag reduction 15.2%，lift coefficient 从 X 降至 Y）
-- **消融实验**：关键组件的消融分析（如有）
-- **主要发现**：从结果中得出的核心结论
-
-#### Claims & Contributions
-- 作者声称的主要贡献（逐条列出）
-- 论文声称的 novelty
-
-#### Assumptions & Limits
-- **理论假设**：模型/分析所依赖的前提条件
-- **数值假设**：离散化、收敛性、稳定性相关假设
-- **适用范围**：论文结论的适用条件和边界
-- **作者自述局限**：论文中作者承认的不足
-
-#### Repro Notes
-- 代码/数据可用性
-- 关键实验参数复现所需信息
-- 计算资源需求（如提及）
-
-#### Key Excerpts
-> 直接引用论文中的关键句子/段落，标注页码。用于后续引用和审计。
-
-#### Citations
-- `[@bibkey]` 引用条目
-- 引用来源与上下文
-
-#### Related Work Links
-- 相关论文页的相对链接
-- 该论文在研究脉络中的位置
-
-### 2.2 抽取质量指南
-
-ingest 时 agent 必须遵循以下抽取原则：
-
-**准确性**：
-- 方法名称、算法名称使用论文中的原始术语
-- 数值结果必须精确到论文报告的精度
-- 数学符号尽量保持论文原始符号体系
-- 不确定的信息标注 `[待验证]`，不编造
-
-**具体性**：
-- "提出了新方法"→ 具体是什么方法，解决什么子问题
-- "实验验证了有效性"→ 具体在什么条件下，提升了多少
-- "优于现有方法"→ 与哪些方法比，指标是什么，数值差异多大
-- "适用于流体控制"→ 具体什么流场，什么控制目标
-
-**结构化**：
+**抽取质量准则**：
+- 每个区块必须包含论文特有的具体信息，禁止笼统描述
+- 方法名、数值结果使用论文原始术语与精度
+- 不确定信息标注 `[待验证]`，不编造
 - Results 中量化结果以 `指标名: 基准值 → 方法值 (Δ%)` 格式呈现
-- Claims 逐条编号列出
-- Tags 按 `[领域, 方法, 专题]` 三层自动提取
 
-**学术规范**：
-- 全文使用学术语言，简洁客观
-- 引用原文关键表述时使用引号并标注页码
-- 保持中立评价，区分"作者声称"与"论文验证"
-
-### 2.3 topic: `wiki/topics/<slug>.md`
+### 2.2 topic: `wiki/topics/<slug>.md`
 
 ```yaml
 ---
@@ -196,7 +120,7 @@ source_papers:
 ---
 ```
 
-### 2.4 survey: `wiki/surveys/<slug>.md`
+### 2.3 survey: `wiki/surveys/<slug>.md`
 
 ```yaml
 ---
