@@ -7,6 +7,26 @@ description: Use when building or maintaining a personal paper-centric wiki with
 
 基于 `Astro-Han/karpathy-llm-wiki` 作为骨架，融合 `kfchou/wiki-skills` 与 `skyllwt/OmegaWiki` 的指定能力，保持 v0.1 轻量闭环。
 
+## 自动路由（用户入口）
+
+用户只需描述需求，skill 自动识别并执行对应流程：
+
+| 用户意图 | 触发词 / 场景 | 自动执行 |
+|----------|-------------|---------|
+| **初始化文献库** | 给出文献目录 + 空/新 workspace | init → ingest(全量) → finalize → audit → survey |
+| **添加新文献** | 给出单个/多个文件路径到已有 workspace | ingest → finalize → audit → survey |
+| **查询知识** | `/query` 或自然语言提问 | query |
+| **生成综述** | `/survey` 或要求综述/Related Work | survey |
+| **修订页面** | `/update` 或要求修改已有页面 | update-page |
+| **一致性检查** | `/lint` 或要求健康检查 | lint |
+| **全文流水线** | 明确要求"完整跑一遍"或"端到端测试" | init → ingest → finalize → audit → survey + 验证 |
+
+路由规则：
+- 若 `workspace_root` 不存在或缺少 `wiki/index.md` → 自动先执行 init
+- 若 `workspace_root` 已有完整结构 → 跳过 init，直接进入目标流程
+- 若用户同时给出文献目录和 workspace → 批量 ingest 全部文献
+- 所有流程全自动执行，不中途询问已确定的参数细节
+
 ## 0) 先决边界（必须遵守）
 
 1. 本仓库是 **skill 源码目录**，不是运行时知识库目录。
@@ -206,7 +226,21 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 5. 记录 finalize 事件（含 trace_id）
 
 查证与仲裁规则：
-- 来源优先级：出版方/期刊官网 > DOI 官方落地页 > arXiv 页面 > Crossref/OpenAlex/Semantic Scholar（交叉核验）
+
+**第一步：本地提取（零 token 开销）**
+- 从 PDF/Tex 原文件抽取首页文本，识别：标题、作者、年份、DOI、arXiv ID、期刊名
+- 若本地提取信息完整且可信（标题+作者+年份均明确），直接使用，不联网
+- 提取困难或可信度低时（如 PDF 为扫描件、作者名截断、无 DOI），进入联网查证
+
+**第二步：联网查证（按需、搜到即停）**
+- 联网查证由**子代理**执行，主代理在启动时一次性授予子代理 WebSearch 与 WebFetch（含学术平台）权限
+- 可用平台：Google Scholar、arXiv、Connected Papers、Crossref、OpenAlex、Semantic Scholar
+- 搜索策略：按标题或 DOI/arXiv ID 直接搜索，从搜索结果页提取元数据；必要时访问论文详情页核验
+- **搜到一条可信结果即停止**，不遍历全部源
+- 仅当结果可疑（作者缺失、标题截断、年份明显错误）时，才换关键词或换平台继续查
+- 所有字段均不允许 Unknown/空值：title、authors、year、venue 必须有实际值
+
+**冲突仲裁**
 - 高优先级与低优先级冲突时：高优先级覆盖
 - 同优先级来源冲突时：标记 `metadata_conflict` 并进入人工确认
 - 仲裁证据必须写入 `wiki/log.md`（来源 URL、冲突字段、裁决结果）
@@ -220,6 +254,7 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 - `source_path` 不存在、不可读或扩展名不在 `.pdf` / `.tex`：立即失败，不写入半成品
 - 目录模式下 `source_dir` 不存在、不可读或递归后无 `.pdf` / `.tex`：立即失败，不写入半成品
 - metadata 未查证：禁止生成 final_bibkey，保留 pending（draft）
+- metadata 字段不完整（title/authors/year/venue 任一为空或 Unknown）：禁止 finalize，必须继续查证
 - metadata 冲突且无法自动仲裁：写入冲突日志并进入人工确认
 - 同一 `pdf_hash` 重复 ingest：幂等处理，不重复追加 refs/index/log
 - 任何目标路径落在 skill 源码目录：立即拒绝
