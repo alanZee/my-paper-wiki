@@ -247,7 +247,25 @@ Claude Code：
 Agent(
     description="查证论文元数据",
     model="haiku",
-    prompt="请用 WebSearch 和 WebFetch 查找以下论文的完整元数据（title, authors, year, venue, DOI）：\n标题：<title_guess>\narXiv ID：<arxiv_id>\nDOI：<doi>\n\n要求：搜到一条可信结果即返回，不要遍历全部源。返回 JSON 格式。",
+    prompt="""请查找以下论文的完整元数据（title, authors, year, venue, DOI）：
+
+标题：<title_guess>
+arXiv ID：<arxiv_id>
+DOI：<doi>
+
+搜索步骤：
+1. 若有 DOI，先用 WebFetch 访问 https://doi.org/<doi> 获取元数据
+2. 若有 arXiv ID，用 WebFetch 访问 https://arxiv.org/abs/<arxiv_id>
+3. 若上述不足，用 WebSearch 搜索标题，优先访问：
+   - Google Scholar: https://scholar.google.com/scholar?q=<title>
+   - Connected Papers: https://www.connectedpapers.com/search?q=<title>
+   - Crossref: https://api.crossref.org/works?query.title=<title>
+   - OpenAlex: https://api.openalex.org/works?search=<title>
+   - Semantic Scholar: https://api.semanticscholar.org/graph/v1/paper/search?query=<title>
+
+要求：搜到一条可信结果即返回，不遍历全部源。
+返回 JSON：{"title":"...","authors":["..."],"year":2024,"venue":"...","doi":"...","source":"..."}
+""",
 )
 ```
 
@@ -255,20 +273,22 @@ OpenCode / Codex CLI：
 ```
 task(
     model="haiku",
-    prompt="请用 WebSearch 和 WebFetch 查找以下论文的完整元数据...",
+    tools=["web_search", "web_fetch"],
+    prompt="请查找以下论文的完整元数据...",
 )
 ```
 
 Gemini CLI：
 ```
-# 通过 Gemini 的 agents/skills 机制创建子代理
+# 通过 Gemini 的 agents/skills 机制创建子代理，授予搜索工具权限
 ```
 
 通用原则：
 - 子代理使用最小模型（Haiku 级别），节省 token 开销
-- 主代理在创建子代理时一次性传递搜索权限，子代理无需重复申请
-- 子代理返回结构化结果（JSON），主代理直接使用
+- 主代理在创建子代理时一次性授予 WebSearch + WebFetch 权限（含学术平台 URL 白名单）
+- 子代理返回结构化 JSON，主代理直接消费
 - 每篇论文一个子代理调用，批量时可并行
+- 子代理仅需搜索权限，无需文件读写权限
 
 **冲突仲裁**
 - 高优先级与低优先级冲突时：高优先级覆盖
