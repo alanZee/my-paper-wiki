@@ -7,12 +7,13 @@
 验证项：
     1. 目录结构完整性
     2. 元数据完整性（无 Unknown/空值）
-    3. 状态机一致性（draft -> audit(pass) -> stable）
-    4. refs.bib 与 wiki/papers 一致性
-    5. 审计报告存在且通过
-    6. survey 门槛判定
-    7. 无个人路径泄露
-    8. 日志完整性
+    3. 正文区块完整性（必填区块存在且有实质内容）
+    4. 状态机一致性（draft -> audit(pass) -> stable）
+    5. refs.bib 与 wiki/papers 一致性
+    6. 审计报告存在且通过
+    7. survey 门槛判定
+    8. 无个人路径泄露
+    9. 日志完整性
 """
 
 import argparse
@@ -102,7 +103,8 @@ def main():
         meta_src = fm.get("metadata_source", "")
 
         # 元数据完整性
-        for field in ["title", "bibkey", "year", "source_file", "source_text"]:
+        for field in ["title", "bibkey", "authors", "year", "venue",
+                       "source_file", "source_text", "methodology_type"]:
             val = fm.get(field, "")
             if not val or val == "Unknown" or val == "null":
                 errors.append(f"{page.name}: {field} 为空或 Unknown")
@@ -140,6 +142,33 @@ def main():
         # 状态机
         if status == "stable":
             stable_count += 1
+
+        # 正文区块完整性（仅检查 final pages，跳过 pending）
+        if not page.parent.name == "_pending":
+            # 必填区块（标题后有实质内容）
+            required_sections = [
+                "Abstract", "Research Questions", "Problem Formulation",
+                "Approach", "Results", "Claims & Contributions",
+                "Assumptions & Limits",
+            ]
+            for section in required_sections:
+                pattern = r"#+\s*" + re.escape(section) + r"\b"
+                m = re.search(pattern, txt)
+                if not m:
+                    errors.append(f"{page.name}: 缺少必填区块 '{section}'")
+                else:
+                    # 检查区块后是否有实质内容（至少 50 字符非空内容）
+                    after = txt[m.end():]
+                    # 截止到下一个同级或更高级标题
+                    next_hdr = re.search(r"\n#{1,4}\s+\S", after)
+                    if next_hdr:
+                        after = after[:next_hdr.start()]
+                    content = after.strip()
+                    if len(content) < 50:
+                        warnings.append(
+                            f"{page.name}: 区块 '{section}' 内容过少"
+                            f"（{len(content)} 字符），可能未实质提取"
+                        )
 
     ok(f"论文页面: {len(paper_pages)} 篇, stable: {stable_count} 篇")
 
