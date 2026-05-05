@@ -91,7 +91,7 @@ def main():
         errors.append("无 final paper 页面")
 
     refs_text = (root / "refs.bib").read_text(encoding="utf-8") if (root / "refs.bib").exists() else ""
-    ref_bibkeys = set(re.findall(r"@article\{(\w+),", refs_text))
+    ref_bibkeys = set(re.findall(r"@\w+\{(\w+),", refs_text))
 
     stable_count = 0
     for page in sorted(paper_pages):
@@ -119,8 +119,11 @@ def main():
 
         # refs.bib 中对应条目元数据完整性
         if bibkey in ref_bibkeys:
-            # 用括号深度匹配提取完整条目块
-            start = refs_text.find("@article{" + bibkey + ",")
+            # 用括号深度匹配提取完整条目块（兼容所有 entry type）
+            start = -1
+            for m in re.finditer(r"@\w+\{" + re.escape(bibkey) + r",", refs_text):
+                start = m.start()
+                break
             if start >= 0:
                 depth = 0
                 end = start
@@ -133,11 +136,23 @@ def main():
                             end = i
                             break
                 block = refs_text[start:end]
-                for field in ["title", "author", "year", "journal"]:
+                for field in ["title", "author", "year"]:
                     val_m = re.search(field + r"\s*=\s*\{([^}]*)\}", block)
                     val = val_m.group(1).strip() if val_m else ""
                     if not val or "Unknown" in val or "Unresolved" in val:
                         errors.append("refs.bib[" + bibkey + "]: " + field + " 为空或包含 Unknown/Unresolved")
+                # journal 字段：预印本可缺失，但需有 note 或 eprint 作为替代
+                journal_m = re.search(r"journal\s*=\s*\{([^}]*)\}", block)
+                journal = journal_m.group(1).strip() if journal_m else ""
+                if not journal or "Unknown" in journal or "Unresolved" in journal:
+                    note_m = re.search(r"note\s*=\s*\{([^}]*)\}", block)
+                    eprint_m = re.search(r"eprint\s*=\s*\{([^}]*)\}", block)
+                    note = note_m.group(1).strip() if note_m else ""
+                    eprint = eprint_m.group(1).strip() if eprint_m else ""
+                    if not note and not eprint:
+                        errors.append(
+                            "refs.bib[" + bibkey + "]: journal 为空且无 note/eprint 补充"
+                        )
 
         # 状态机
         if status == "stable":

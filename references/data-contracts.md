@@ -44,7 +44,14 @@
 - 共享目标：`refs.bib`、`wiki/index.md`、`wiki/log.md`
 - 写入流程：获取写锁 -> 写临时文件 -> 原子替换目标文件 -> 释放锁
 
-## 5) 幂等与恢复
+## 5) refs.bib 格式规范
+
+- 期刊论文：`@article{bibkey, ..., journal={...}, ...}`
+- 预印本：`@article{bibkey, ..., note={Preprint}, eprint={arXiv:XXXX.XXXXX}, ...}`
+  - `journal` 字段可省略，但 `note` 或 `eprint` 必须保留，用于标识预印本身份
+- 审计报告必须存放在 `outputs/audit/<bibkey>-audit.md`
+
+## 6) 幂等与恢复
 
 - 幂等键：`pdf_hash`
 - 中断后允许按 `pdf_hash` 重入
