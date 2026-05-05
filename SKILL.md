@@ -109,30 +109,11 @@ description: Use when building or maintaining a personal paper-centric wiki with
 
 ### 2.2 topic: `wiki/topics/<slug>.md`
 
-```yaml
----
-type: topic
-title: "<topic title>"
-status: draft
-updated: 2026-05-04
-source_papers:
-  - ../papers/<bibkey>.md
----
-```
+模板详见 `references/topic-template.md`。
 
 ### 2.3 survey: `wiki/surveys/<slug>.md`
 
-```yaml
----
-type: survey
-title: "<survey title>"
-status: draft
-updated: 2026-05-04
-source_papers:
-  - ../papers/<bibkey>.md
-target_output: "../../outputs/survey/<slug>.tex"
----
-```
+模板详见 `references/survey-template.md`。
 
 ---
 
@@ -240,83 +221,10 @@ stable -> update-page(content-change) -> draft -> audit(pass) -> stable
 **第二步：联网查证（按需、搜到即停）**
 - 联网查证由**子代理**执行，使用高性价比模型（如 Haiku），主代理一次性授予搜索权限
 - 可用平台：Google Scholar、arXiv、Connected Papers、Crossref、OpenAlex、Semantic Scholar
-- 搜索策略：按标题或 DOI/arXiv ID 直接搜索，从搜索结果页提取元数据；必要时访问论文详情页核验
-- **搜到一条可信结果即停止**，不遍历全部源
-- 仅当结果可疑（作者缺失、标题截断、年份明显错误）时，才换关键词或换平台继续查
+- 搜索策略：按标题或 DOI/arXiv ID 直接搜索，搜到一条可信结果即停止，不遍历全部源
+- 仅当结果可疑时，才换关键词或换平台继续查
 - 所有字段均不允许 Unknown/空值：title、authors、year、venue 必须有实际值
-
-**子代理创建示例（跨平台）**
-
-Claude Code：
-```
-Agent(
-    description="查证论文元数据",
-    model="haiku",
-    prompt="""请查找以下论文的完整元数据（title, authors, year, venue, DOI）：
-
-标题：<title_guess>
-arXiv ID：<arxiv_id>
-DOI：<doi>
-
-允许访问的学术平台（WebFetch URL 白名单）：
-- DOI 解析: https://doi.org/*
-- arXiv: https://arxiv.org/abs/*, https://export.arxiv.org/api/*
-- Google Scholar: https://scholar.google.com/scholar*
-- Connected Papers: https://www.connectedpapers.com/*
-- Crossref: https://api.crossref.org/works/*
-- OpenAlex: https://api.openalex.org/works*
-- Semantic Scholar: https://api.semanticscholar.org/graph/v1/paper/search*
-
-搜索步骤：
-1. 若有 DOI，先 WebFetch https://doi.org/<doi>
-2. 若有 arXiv ID，WebFetch https://arxiv.org/abs/<arxiv_id>
-3. 若上述不足，WebSearch 按标题搜索，逐平台访问直到拿到可信结果
-
-要求：搜到一条可信结果即返回，不遍历全部源。
-返回 JSON：{"title":"...","authors":["..."],"year":2024,"venue":"...","doi":"...","source":"..."}
-""",
-)
-```
-
-OpenCode / Codex CLI：
-```
-task(
-    model="haiku",
-    tools=["web_search", "web_fetch"],
-    allowed_urls=[
-        "https://doi.org/*",
-        "https://arxiv.org/abs/*",
-        "https://export.arxiv.org/api/*",
-        "https://scholar.google.com/*",
-        "https://www.connectedpapers.com/*",
-        "https://api.crossref.org/works/*",
-        "https://api.openalex.org/works*",
-        "https://api.semanticscholar.org/*",
-    ],
-    prompt="请查找以下论文的完整元数据...",
-)
-```
-
-Gemini CLI：
-```
-# 通过 Gemini 的 agents/skills 机制创建子代理，授予搜索工具与 URL 权限
-```
-
-通用原则：
-- 子代理使用最小模型（Haiku 级别），节省 token 开销
-- 主代理在创建子代理时一次性授予 WebSearch + WebFetch 权限（含学术平台 URL 白名单）
-- 子代理返回结构化 JSON 列表，主代理直接消费
-- 子代理仅需搜索权限，无需文件读写权限
-
-**并行调度策略**
-- 论文数 < 5：单个子代理处理全部论文
-- 论文数 ≥ 5：拆分为多个并行子代理，每个子代理至少处理 5 篇论文
-- 拆分示例（12 篇论文 → 2 个子代理，各 6 篇）：
-  ```
-  Agent(description="查证论文元数据 batch-1 (6篇)", model="haiku", prompt="...论文 1-6...")
-  Agent(description="查证论文元数据 batch-2 (6篇)", model="haiku", prompt="...论文 7-12...")
-  ```
-- harness 不支持并行时退化为串行，不影响正确性
+- 子代理创建示例与并行调度策略详见 `references/subagent-examples.md`
 
 **冲突仲裁**
 - 高优先级与低优先级冲突时：高优先级覆盖
@@ -541,102 +449,21 @@ Gemini CLI：
 
 ---
 
-## 4.8 统一失败分级输出模板（执行时格式约束）
+## 4.8 统一失败分级输出
 
-为降低执行歧义，7 个 skills 在失败/异常时统一使用三级输出：
+7 个 skills 在失败/异常时统一使用三级输出：`error`（硬停止）、`warn`（告警不降级）、`info`（状态说明）。
 
-- `error`：硬失败，当前步骤立即停止
-- `warn`：可继续但必须显式告警，不得默默降级
-- `info`：状态说明，不构成失败
-
-统一输出结构（终端或日志均适用）：
-- `level`: `error|warn|info`
-- `skill`: `wiki-init|wiki-ingest|wiki-query|wiki-audit|wiki-lint|wiki-survey|wiki-update-page`
-- `code`: 稳定错误码（如 `MPW-INGEST-NO-SOURCE`）
-- `message`: 面向用户的简明说明
-- `action`: 下一步建议（可执行）
-- `trace_id`: 关键流程必须带 trace_id
-
-推荐错误码前缀：
-- `MPW-INIT-*`
-- `MPW-INGEST-*`
-- `MPW-QUERY-*`
-- `MPW-AUDIT-*`
-- `MPW-LINT-*`
-- `MPW-SURVEY-*`
-- `MPW-UPDATE-*`
-
-示例（error）：
-```json
-{"level":"error","skill":"wiki-ingest","code":"MPW-INGEST-NO-SOURCE","message":"source_path 不存在或不可读","action":"检查 source_path 或改用 source_dir","trace_id":"trace-20260504-abcdef12"}
-```
-
-示例（warn）：
-```json
-{"level":"warn","skill":"wiki-query","code":"MPW-QUERY-WEAK-EVIDENCE","message":"stable 证据不足，结论存在不确定性","action":"先补 ingest/audit 后再生成确定性结论","trace_id":"trace-20260504-bcdefa34"}
-```
-
-示例（info）：
-```json
-{"level":"info","skill":"wiki-lint","code":"MPW-LINT-PASS","message":"lint 检查通过","action":"可继续后续流程","trace_id":"trace-20260504-cdefab56"}
-```
+输出结构、错误码前缀与示例详见 `references/error-format.md`。
 
 ---
 
-## 5) 引用追踪（citations.jsonl）
+## 5) 数据契约与运行时约束
 
-文件：`<workspace_root>/outputs/citations.jsonl`
-
-最小字段：
-- `timestamp`
-- `source_page`
-- `bibkeys`
-- `claim_span`
-- `trace_id`
-
-示例：
-
-```json
-{"timestamp":"2026-05-04T12:34:56+08:00","source_page":"wiki/surveys/fluid-control.md","bibkeys":["smith2024turbulence"],"claim_span":"方法 A 在 Re=1e5 下优于方法 B。","trace_id":"trace-20260504-abcdef12"}
-```
+引用追踪、冲突记录、失败重试、并发一致性、幂等恢复等详细规范详见 `references/data-contracts.md`。
 
 ---
 
-## 6) 元数据冲突记录最小字段（log）
-
-当 metadata 冲突进入人工确认，`wiki/log.md` 事件最小字段：
-- `timestamp`
-- `trace_id`
-- `provisional_key`
-- `candidate_final_bibkey`
-- `conflict_fields`
-- `source_refs`
-- `decision`
-
-说明：`source_refs` 允许同时记录 URL 与本地来源路径（含 `<文献根目录>` 下相对路径）。
-
----
-
-## 7) 失败重试与并发一致性（运行时约束）
-
-重试与回退参数：
-- `max_retries = 3`
-- `backoff = 2^n`
-- `per_source_timeout = 8s`
-
-并发一致性约束（共享文件）：
-- 共享目标：`refs.bib`、`wiki/index.md`、`wiki/log.md`
-- 写入流程：获取写锁 -> 写临时文件 -> 原子替换目标文件 -> 释放锁
-
-幂等与恢复：
-- 幂等键：`pdf_hash`
-- 中断后允许按 `pdf_hash` 重入
-- 重入不得重复追加 refs/index/log
-- 关键事件需写入 `trace_id` 到 `wiki/log.md`
-
----
-
-## 8) 执行原则
+## 6) 执行原则
 
 1. README 是验收基线；上游仓库仅作基底与能力来源，不作为最终边界定义。
 2. 先保证流程闭环，再补细节，不引入范围外重特性。
