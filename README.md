@@ -36,19 +36,18 @@ skill 自动识别意图并执行对应流程：
 "/lint"                                    → lint
 ```
 
-### 斜杠命令
-
-单一入口 `/my-paper-wiki`，根据用户意图自动路由到对应子流程：
+### 用法示例
 
 ```
-/my-paper-wiki 初始化论文 wiki                          → init
-/my-paper-wiki ingest path/to/paper.pdf                 → ingest
-/my-paper-wiki 我对流动控制方向都知道什么？                → query
-/my-paper-wiki 生成机器学习综述                          → survey
-/my-paper-wiki lint                                     → lint
+"初始化论文 wiki"                          → init
+"把这些 PDF 加入 wiki"                     → ingest
+"基于 stable 论文生成机器学习综述"           → survey
+"我对流动控制方向都知道什么？"               → query
+"检查 wiki 一致性"                         → lint
+"完整跑一遍"                               → 全流水线
 ```
 
-7 个子流程：init、ingest、finalize、audit、query、survey、update-page
+skill 自动识别意图并执行对应流程，所有 harness 通用。
 
 ### 参数
 
